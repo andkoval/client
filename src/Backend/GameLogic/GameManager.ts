@@ -1093,7 +1093,8 @@ class GameManager extends EventEmitter {
       }
     );
 
-    this.minerManager.startExplore();
+    // Disable miner on startup
+    // this.minerManager.startExplore();
   }
 
   /**
