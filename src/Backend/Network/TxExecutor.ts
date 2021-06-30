@@ -83,7 +83,7 @@ export class TxExecutor extends EventEmitter {
     const [txReceipt, rejectTxReceipt, receiptPromise] = deferred<providers.TransactionReceipt>();
 
     if (overrides.gasPrice === undefined) {
-      const gwei = EthersBN.from('1000000000');
+      const gwei = EthersBN.from('1010000000');
       let userGasPriceGwei = getSetting(this.eth.getAddress(), Setting.GasFeeGwei);
 
       // TODO: this value should be pulled from blockscout API or something
