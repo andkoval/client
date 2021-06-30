@@ -174,14 +174,15 @@ export class TxExecutor extends EventEmitter {
       this.lastTransaction = time_submitted;
       txRequest.onTransactionResponse(submitted);
 
-      const confirmed = await this.eth.waitForTransaction(submitted.hash);
-      time_confirmed = Date.now();
-      txRequest.onTransactionReceipt(confirmed);
+      this.eth.waitForTransaction(submitted.hash).then((confirmed) => {
+        time_confirmed = Date.now();
+        txRequest.onTransactionReceipt(confirmed);
 
-      if (confirmed.status !== 1) {
-        time_errored = time_confirmed;
-        error = new Error('transaction reverted');
-      }
+        if (confirmed.status !== 1) {
+          time_errored = time_confirmed;
+          error = new Error('transaction reverted');
+        }
+      }).catch(txRequest.onReceiptError);
     } catch (e) {
       console.error(e);
       time_errored = Date.now();
