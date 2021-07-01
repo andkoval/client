@@ -61,7 +61,7 @@ import { PlanetContextPane } from '../Panes/PlanetContextPane';
 import { HoverPlanetPane } from '../Panes/HoverPlanetPane';
 import { TopBar } from './TopBar';
 import { DiagnosticsPane } from '../Panes/DiagnosticsPane';
-import { Setting, useBooleanSetting } from '../Utils/SettingsHooks';
+import { Setting, BooleanSetting, useBooleanSetting } from '../Utils/SettingsHooks';
 
 export function GameWindowLayout() {
   const planetDetHook = useState<boolean>(false);
@@ -209,6 +209,12 @@ export function GameWindowLayout() {
                 <ModalHatIcon hook={hatHook} />
                 <ModalTwitterBroadcastIcon hook={twitterBroadcastHook} />
                 <ModalUpgradeDetailsIcon hook={upgradeDetHook} />
+                <div style={{ margin: '8pt auto 0' }}>
+                  <BooleanSetting
+                      uiManager={uiManager}
+                      setting={Setting.HighPerformanceRendering}
+                  />
+                </div>
               </MenuBarSection>
             </MenuBar>
             <ZoomPane />
