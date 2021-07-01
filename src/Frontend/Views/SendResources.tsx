@@ -16,7 +16,7 @@ import { useEmitterSubscribe, useEmitterValue } from '../Utils/EmitterHooks';
 import { escapeDown$, keyUp$ } from '../Utils/KeyEmitters';
 import UIEmitter, { UIEmitterEvent } from '../Utils/UIEmitter';
 
-const DEFAULT_ENERGY_PERCENT = 75;
+const DEFAULT_ENERGY_PERCENT = 69;
 const DEFAULT_SILVER_PERCENT = 0;
 
 const StyledSendResources = styled.div``;
