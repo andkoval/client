@@ -11,7 +11,7 @@ import dfstyles from '../Styles/dfstyles';
 import { useUIManager } from '../Utils/AppHooks';
 import { Setting } from '../Utils/SettingsHooks';
 
-const NOTIF_SIZE = '4em';
+const NOTIF_SIZE = '1em';
 const MARGIN = '8px';
 const fadeBrightness = keyframes`
   from {
