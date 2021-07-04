@@ -9,23 +9,20 @@ export class ContractCaller {
   private readonly callQueue = new ThrottledConcurrentQueue(10, 1000, 20);
 
   public async makeCall<T>(
-    contractViewFunction: ContractFunction<T>,
-    args: unknown[] = []
+      contractViewFunction: ContractFunction<T>,
+      args: unknown[] = []
   ): Promise<T> {
     for (let i = 0; i < ContractCaller.MAX_RETRIES; i++) {
       try {
-        const callPromise = this.callQueue.add(() => {
-          this.diagnosticsUpdater?.updateDiagnostics((d) => {
-            d.totalCalls++;
-          });
-          return contractViewFunction(...args);
+        this.diagnosticsUpdater?.updateDiagnostics((d) => {
+          d.totalCalls++;
         });
 
         this.diagnosticsUpdater?.updateDiagnostics((d) => {
           d.callsInQueue = this.callQueue.size();
         });
 
-        const callResult = await callPromise;
+        const callResult = await contractViewFunction(...args);;
 
         this.diagnosticsUpdater?.updateDiagnostics((d) => {
           d.callsInQueue = this.callQueue.size();
