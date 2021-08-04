@@ -1,63 +1,64 @@
+import { EMPTY_ADDRESS, MAX_PLANET_LEVEL, MIN_PLANET_LEVEL } from '@darkforest_eth/constants';
+import { Monomitter, monomitter } from '@darkforest_eth/events';
+import { bonusFromHex, getBytesFromHex } from '@darkforest_eth/hexgen';
 import {
-  EthAddress,
-  LocationId,
-  ArtifactId,
-  VoyageId,
-  Planet,
-  LocatablePlanet,
+  ArrivalWithTimer,
   Artifact,
-  WorldCoords,
-  WorldLocation,
-  PlanetLevel,
+  ArtifactId,
   ArtifactType,
-  SpaceType,
   Biome,
+  EthAddress,
+  LocatablePlanet,
+  LocationId,
+  Planet,
+  PlanetLevel,
   PlanetType,
   QueuedArrival,
-  ArrivalWithTimer,
-  UnconfirmedMove,
-  UnconfirmedUpgrade,
-  UnconfirmedBuyHat,
-  UnconfirmedPlanetTransfer,
-  UnconfirmedActivateArtifact,
-  TxIntent,
-  UnconfirmedReveal,
-  UnconfirmedBuyGPTCredits,
   RevealedLocation,
+  SpaceType,
+  TxIntent,
+  UnconfirmedActivateArtifact,
+  UnconfirmedBuyGPTCredits,
+  UnconfirmedBuyHat,
+  UnconfirmedMove,
+  UnconfirmedPlanetTransfer,
+  UnconfirmedReveal,
+  UnconfirmedUpgrade,
+  VoyageId,
+  WorldCoords,
+  WorldLocation,
 } from '@darkforest_eth/types';
 import autoBind from 'auto-bind';
 import bigInt from 'big-integer';
+import { ethers } from 'ethers';
 import NotificationManager from '../../Frontend/Game/NotificationManager';
 import {
-  setObjectSyncState,
-  getPlanetId,
-  getPlanetOwner,
   getArtifactId,
   getArtifactOwner,
+  getPlanetId,
+  getPlanetOwner,
+  setObjectSyncState,
 } from '../../Frontend/Utils/EmitterUtils';
-import { Monomitter, monomitter } from '../../Frontend/Utils/Monomitter';
 import { ContractConstants } from '../../_types/darkforest/api/ContractsAPITypes';
-import { Wormhole, isLocatable, Chunk } from '../../_types/global/GlobalTypes';
+import { Chunk, isLocatable, Wormhole } from '../../_types/global/GlobalTypes';
 import {
-  isUnconfirmedMove,
-  isUnconfirmedUpgrade,
-  isUnconfirmedBuyHat,
-  isUnconfirmedTransfer,
-  isUnconfirmedProspectPlanet,
-  isUnconfirmedFindArtifact,
-  isUnconfirmedDepositArtifact,
-  isUnconfirmedWithdrawArtifact,
   isUnconfirmedActivateArtifact,
-  isUnconfirmedDeactivateArtifact,
-  isUnconfirmedReveal,
   isUnconfirmedBuyGPTCredits,
+  isUnconfirmedBuyHat,
+  isUnconfirmedDeactivateArtifact,
+  isUnconfirmedDepositArtifact,
+  isUnconfirmedFindArtifact,
+  isUnconfirmedMove,
+  isUnconfirmedProspectPlanet,
+  isUnconfirmedReveal,
+  isUnconfirmedTransfer,
+  isUnconfirmedUpgrade,
+  isUnconfirmedWithdrawArtifact,
   isUnconfirmedWithdrawSilver,
 } from '../Utils/TypeAssertions';
 import { hasOwner } from '../Utils/Utils';
-import { updatePlanetToTime, arrive } from './ArrivalUtils';
+import { arrive, PlanetDiff, updatePlanetToTime } from './ArrivalUtils';
 import { isActivated } from './ArtifactUtils';
-import { EMPTY_ADDRESS } from '@darkforest_eth/constants';
-import { bonusFromHex, getBytesFromHex } from '@darkforest_eth/hexgen';
 import { LayeredMap } from './LayeredMap';
 import { Radii } from './ViewportEntities';
 
@@ -412,7 +413,7 @@ export class GameObjects {
   public getPlanetDetailLevel(planetId: LocationId): number | undefined {
     const planet = this.planets.get(planetId);
     if (planet) {
-      let detailLevel = planet.planetLevel;
+      let detailLevel = planet.planetLevel as number;
       if (hasOwner(planet)) {
         detailLevel += 1;
       }
@@ -560,7 +561,7 @@ export class GameObjects {
 
   // returns an empty planet if planet is not in contract
   // returns undefined if this isn't a planet, according to hash and coords
-  public getPlanetWithCoords(coords: WorldCoords): Planet | undefined {
+  public getPlanetWithCoords(coords: WorldCoords): LocatablePlanet | undefined {
     const str = getCoordsString(coords);
 
     const location = this.coordsToLocation.get(str);
@@ -568,7 +569,7 @@ export class GameObjects {
       return undefined;
     }
 
-    return this.getPlanetWithLocation(location);
+    return this.getPlanetWithLocation(location) as LocatablePlanet;
   }
 
   // returns an empty planet if planet is not in contract
@@ -1039,6 +1040,17 @@ export class GameObjects {
     return this.revealedLocations;
   }
 
+  public getPlanetsWithIds(locationIds: LocationId[], updateIfStale = true): Planet[] {
+    return locationIds
+      .map((id) => this.getPlanetWithId(id, updateIfStale))
+      .filter((p) => p !== undefined) as LocatablePlanet[];
+  }
+
+  public getPlanetsInWorldCircle(coords: WorldCoords, radius: number): LocatablePlanet[] {
+    const locationIds = this.layeredMap.getPlanetsInCircle(coords, radius);
+    return this.getPlanetsWithIds(locationIds) as LocatablePlanet[];
+  }
+
   /**
    * Gets the ids of all the planets that are both within the given bounding box (defined by its bottom
    * left coordinate, width, and height) in the world and of a level that was passed in via the
@@ -1061,9 +1073,7 @@ export class GameObjects {
       levels,
       planetLevelToRadii
     );
-    return locationIds
-      .map((id) => this.getPlanetWithId(id, updateIfStale))
-      .filter((p) => p !== undefined) as LocatablePlanet[];
+    return this.getPlanetsWithIds(locationIds) as LocatablePlanet[];
   }
 
   /**
@@ -1118,6 +1128,32 @@ export class GameObjects {
       artifact
     );
   }
+  /**
+   * Emit notifications based on a planet's state change
+   */
+  private emitArrivalNotifications({ previous, current, arrival }: PlanetDiff) {
+    const notifManager = NotificationManager.getInstance();
+    if (
+      !GameObjects.planetCanUpgrade(previous) &&
+      GameObjects.planetCanUpgrade(current) &&
+      current.owner === this.address
+    ) {
+      notifManager.planetCanUpgrade(current);
+    }
+    if (
+      previous.owner !== this.address &&
+      previous.owner !== ethers.constants.AddressZero &&
+      current.owner === this.address
+    ) {
+      notifManager.planetConquered(current as LocatablePlanet);
+    }
+    if (previous.owner === this.address && current.owner !== this.address) {
+      notifManager.planetLost(current as LocatablePlanet);
+    }
+    if (arrival.player !== this.address && current.owner === this.address) {
+      notifManager.planetAttacked(current as LocatablePlanet);
+    }
+  }
 
   private processArrivalsForPlanet(
     planetId: LocationId,
@@ -1138,27 +1174,26 @@ export class GameObjects {
       try {
         if (nowInSeconds - arrival.arrivalTime > 0) {
           // if arrival happened in the past, run this arrival
-          arrive(
-            planet,
-            this.getPlanetArtifacts(planet.locationId),
-            arrival,
-            this.contractConstants
-          );
-        } else {
-          // otherwise, set a timer to do this arrival in the future
-          // and append it to arrivalsWithTimers
-          const applyFutureArrival = setTimeout(() => {
+          this.emitArrivalNotifications(
             arrive(
               planet,
               this.getPlanetArtifacts(planet.locationId),
               arrival,
               this.contractConstants
+            )
+          );
+        } else {
+          // otherwise, set a timer to do this arrival in the future
+          // and append it to arrivalsWithTimers
+          const applyFutureArrival = setTimeout(() => {
+            this.emitArrivalNotifications(
+              arrive(
+                planet,
+                this.getPlanetArtifacts(planet.locationId),
+                arrival,
+                this.contractConstants
+              )
             );
-
-            const notifManager = NotificationManager.getInstance();
-            if (GameObjects.planetCanUpgrade(planet) && planet.owner === this.address) {
-              notifManager.planetCanUpgrade(planet);
-            }
           }, arrival.arrivalTime * 1000 - Date.now());
 
           const arrivalWithTimer = {
@@ -1199,9 +1234,9 @@ export class GameObjects {
 
     const levelBigInt = getBytesFromHex(hex, 4, 7);
 
-    let ret = PlanetLevel.MIN;
+    let ret = MIN_PLANET_LEVEL;
 
-    for (let type = PlanetLevel.MAX; type >= PlanetLevel.MIN; type--) {
+    for (let type = MAX_PLANET_LEVEL; type >= MIN_PLANET_LEVEL; type--) {
       if (levelBigInt < bigInt(this.contractConstants.planetLevelThresholds[type])) {
         ret = type;
         break;
@@ -1215,7 +1250,7 @@ export class GameObjects {
       ret = PlanetLevel.FIVE;
     }
     if (ret > this.contractConstants.MAX_NATURAL_PLANET_LEVEL) {
-      ret = this.contractConstants.MAX_NATURAL_PLANET_LEVEL;
+      ret = this.contractConstants.MAX_NATURAL_PLANET_LEVEL as PlanetLevel;
     }
 
     return ret;
@@ -1266,7 +1301,7 @@ export class GameObjects {
     const typeByte = Number(getBytesFromHex(hex, 8, 9));
     for (let i = 0; i < thresholds.length; i++) {
       if (typeByte >= thresholds[i]) {
-        return i;
+        return i as PlanetType;
       }
     }
     // this should never happen
@@ -1284,7 +1319,7 @@ export class GameObjects {
     else if (biomebase < this.contractConstants.BIOME_THRESHOLD_2) biome += 2;
     else biome += 3;
 
-    return biome;
+    return biome as Biome;
   }
 
   /**
@@ -1362,12 +1397,12 @@ export class GameObjects {
       silCap *= 2;
     }
 
-    let barbarians =
+    let pirates =
       (energyCap * this.contractConstants.defaultBarbarianPercentage[planetLevel]) / 100;
-    // increase barbarians
-    if (spaceType === SpaceType.DEAD_SPACE) barbarians *= 20;
-    else if (spaceType === SpaceType.DEEP_SPACE) barbarians *= 10;
-    else if (spaceType === SpaceType.SPACE) barbarians *= 4;
+    // increase pirates
+    if (spaceType === SpaceType.DEAD_SPACE) pirates *= 20;
+    else if (spaceType === SpaceType.DEEP_SPACE) pirates *= 10;
+    else if (spaceType === SpaceType.SPACE) pirates *= 4;
 
     const silver = planetType === PlanetType.SILVER_MINE ? silCap / 2 : 0;
 
@@ -1399,7 +1434,7 @@ export class GameObjects {
       speed,
       defense,
 
-      energy: barbarians,
+      energy: pirates,
       silver,
 
       lastUpdated: Math.floor(Date.now() / 1000),

@@ -1,14 +1,14 @@
-import { Dispatch, SetStateAction } from 'react';
 import {
+  EmojiFlagBody,
+  LocatablePlanet,
   LocationId,
   Planet,
-  LocatablePlanet,
+  PlanetMessage,
+  PlanetMessageType,
   WorldCoords,
   WorldLocation,
-  EmojiFlagBody,
-  PlanetMessageType,
-  PlanetMessage,
 } from '@darkforest_eth/types';
+import { Dispatch, SetStateAction } from 'react';
 import GameManager from '../../Backend/GameLogic/GameManager';
 import GameUIManager from '../../Backend/GameLogic/GameUIManager';
 
@@ -40,7 +40,7 @@ export type HashConfig = {
   perlinMirrorY: boolean;
 };
 
-export enum StatIdx {
+export const enum StatIdx {
   EnergyCap = 0,
   EnergyGro = 1,
   Range = 2,

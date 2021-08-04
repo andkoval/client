@@ -1,8 +1,8 @@
-import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { Hook } from '../../_types/global/GlobalTypes';
 import { Btn } from '../Components/Btn';
-import { Spacer, Truncate } from '../Components/CoreUI';
+import { CenteredText, EmSpacer, KeyboardBtn, Spacer, Truncate } from '../Components/CoreUI';
 import { PaneProps } from '../Components/GameWindowComponents';
 import {
   CloseCircleIcon,
@@ -13,20 +13,20 @@ import {
 import WindowManager from '../Game/WindowManager';
 import dfstyles from '../Styles/dfstyles';
 import { GameWindowZIndex } from '../Utils/constants';
+import { useIsDown } from '../Utils/KeyEmitters';
+import { MODAL_BACK_SHORTCUT, useSubscribeToShortcut } from '../Utils/ShortcutConstants';
 import { DFErrorBoundary } from './DFErrorBoundary';
-
-export const RECOMMENDED_WIDTH = '450px';
 
 export type ModalHook = Hook<boolean>;
 
-export enum ModalName {
+export const enum ModalName {
   Help,
   PlanetDetails,
   Leaderboard,
   PlanetDex,
   UpgradeDetails,
   TwitterVerify,
-  TwitterBroadcast,
+  Broadcast,
   Hats,
   Settings,
   YourArtifacts,
@@ -56,9 +56,7 @@ function InformationSection({
       <InfoSectionContent>
         {children}
         <BtnContainer>
-          <Btn color='white' onClick={hide}>
-            close help
-          </Btn>
+          <Btn onClick={hide}>close help</Btn>
         </BtnContainer>
       </InfoSectionContent>
     </InfoSectionContainer>
@@ -102,7 +100,7 @@ const ModalButton = styled.div`
   font-size: 1.5em;
 
   span svg path {
-    fill: #c2c2c2 !important;
+    fill: ${dfstyles.colors.subbertext} !important;
   }
 
   span:hover svg path {
@@ -138,22 +136,13 @@ const Modal = styled.div`
   height: fit-content;
   background: ${dfstyles.colors.background};
   border-radius: ${dfstyles.borderRadius};
-  border: 1px solid ${dfstyles.colors.subtext};
-`;
-
-/**
- * Contains all the UI inside of this modal, which the
- * users of the `ModalPane` class have full controll over.
- */
-const Content = styled.div`
-  ${({ noPadding }: { noPadding?: boolean }) => css`
-    ${!noPadding && 'padding: 8px;'}
-  `}
+  border: 1px solid ${dfstyles.colors.borderDark};
 `;
 
 const Title = styled(Truncate)`
   flex-grow: 1;
   text-align: left;
+  color: ${dfstyles.colors.subtext};
 `;
 
 /**
@@ -165,17 +154,13 @@ const TitleBar = styled.div`
     user-select: none;
     line-height: 1.5em;
     width: 100%;
-    height: 2.5em;
     cursor: grab;
     padding: 8px;
-    background-color: ${dfstyles.colors.backgroundlight};
-    border-bottom: 1px solid ${minimized ? 'transparent' : dfstyles.colors.subtext};
+    background-color: ${dfstyles.colors.background};
+    border-bottom: 1px solid ${minimized ? 'transparent' : dfstyles.colors.borderDark};
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    &:hover {
-      background: ${dfstyles.colors.backgroundlighter};
-    }
   `}
 `;
 
@@ -197,19 +182,8 @@ const clipY = (y: number, height: number): number => {
   return newY;
 };
 
-export function ModalPane({
-  children,
-  title,
-  hook: [visible, setVisible],
-  hideClose,
-  style,
-  noPadding,
-  helpContent,
-  width,
-  borderColor,
-  backgroundColor,
-  titlebarColor,
-}: PaneProps & {
+export type ModalProps = PaneProps & {
+  title: string | React.ReactNode;
   hook: Hook<boolean>;
   name?: ModalName;
   hideClose?: boolean;
@@ -220,8 +194,47 @@ export function ModalPane({
   borderColor?: string;
   backgroundColor?: string;
   titlebarColor?: string;
-}) {
+  initialPosition?: {
+    x: number;
+    y: number;
+  };
+};
+
+/**
+ * A modal has a {@code content}, and also optionally many {@link ModalFrames} pushed on top of it.
+ */
+export interface ModalFrame {
+  title: string;
+  element: React.ReactElement;
+  helpContent?: React.ReactElement;
+}
+
+/**
+ * @todo Add things like open, close, set position, etc. Get rid of {@code ModalHook}.
+ */
+export interface ModalHandle {
+  push(frame: ModalFrame): void;
+  popAll(): void;
+  pop(): void;
+}
+
+export function ModalPane({
+  children,
+  title,
+  hook: [visible, setVisible],
+  hideClose,
+  style,
+  helpContent,
+  width,
+  borderColor,
+  backgroundColor,
+  titlebarColor,
+  initialPosition,
+}: ModalProps) {
   const windowManager = WindowManager.getInstance();
+  const [frames, setFrames] = useState<ModalFrame[]>([]);
+  const [renderedFrame, setRenderedFrame] = useState<undefined | React.ReactElement>();
+  const [renderedFrameHelp, setRenderedFrameHelp] = useState<undefined | React.ReactElement>();
   const [minimized, setMinimized] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [delCoords, setDelCoords] = useState<Coords | null>(null);
@@ -231,9 +244,8 @@ export function ModalPane({
   const [zIndex, setZIndex] = useState<number>(GameWindowZIndex.Modal);
   const containerRef = useRef<HTMLDivElement>(document.createElement('div'));
   const headerRef = useRef<HTMLDivElement>(document.createElement('div'));
-  const [left, setLeft] = useState<number>(0);
-  const [top, setTop] = useState<number>(0);
   const push = useCallback(() => setZIndex(windowManager.getIndex()), [windowManager]);
+  const [hasSetInitialPosition, setHasSetInitialPosition] = useState(false);
   const [gameSize, setGameSize] =
     useState<
       | {
@@ -243,6 +255,39 @@ export function ModalPane({
       | undefined
     >();
   const [showingInformationSection, setShowingInformationSection] = useState(false);
+  const onMouseDown = useCallback(
+    (e: React.SyntheticEvent) => {
+      push();
+      e.stopPropagation();
+    },
+    [push]
+  );
+
+  const showingHelp = helpContent !== undefined && showingInformationSection;
+  const currentWidth = minimized || showingHelp ? '' : width;
+
+  const api: ModalHandle = useMemo<ModalHandle>(
+    () => ({
+      pop: () => {
+        setFrames((frames) => {
+          frames = [...frames];
+          frames.pop();
+          return frames;
+        });
+      },
+      push: (args: ModalFrame) => {
+        setFrames((frames) => {
+          frames = [...frames];
+          frames.push(args);
+          return frames;
+        });
+      },
+      popAll: () => {
+        setFrames([]);
+      },
+    }),
+    []
+  );
 
   useEffect(() => {
     const onResize = () => {
@@ -326,13 +371,21 @@ export function ModalPane({
     };
   }, [visible, clicking, mousedownCoords, coords]);
 
-  // inits at center
+  // inits at center, or provided initial coordinates
   useLayoutEffect(() => {
-    const newX = 0.5 * (window.innerWidth - containerRef.current.offsetWidth);
-    const newY = 0.5 * (window.innerHeight - containerRef.current.offsetHeight);
-    setCoords({ x: newX, y: newY });
+    if (hasSetInitialPosition) return;
+    setHasSetInitialPosition(true);
+
+    if (initialPosition) {
+      setCoords(initialPosition);
+    } else {
+      const newX = 0.5 * (window.innerWidth - containerRef.current.offsetWidth);
+      const newY = 0.5 * (window.innerHeight - containerRef.current.offsetHeight);
+      setCoords({ x: newX, y: newY });
+    }
+
     push();
-  }, [containerRef, windowManager, push]);
+  }, [containerRef, windowManager, push, initialPosition]);
 
   // push to top
   useLayoutEffect(() => {
@@ -346,8 +399,14 @@ export function ModalPane({
     if (!coords) return;
     const delX = delCoords ? delCoords.x : 0;
     const delY = delCoords ? delCoords.y : 0;
-    setLeft(clipX(coords.x + delX, containerRef.current.offsetWidth));
-    setTop(clipY(coords.y + delY, containerRef.current.offsetHeight));
+
+    const left = clipX(coords.x + delX, containerRef.current.offsetWidth) + 'px';
+    const top = clipY(coords.y + delY, containerRef.current.offsetHeight) + 'px';
+
+    if (containerRef.current) {
+      containerRef.current.style.left = left;
+      containerRef.current.style.top = top;
+    }
   }, [
     coords,
     delCoords,
@@ -357,23 +416,60 @@ export function ModalPane({
     containerRef.current.offsetHeight,
   ]);
 
-  const onMouseDown = useCallback(
-    (e: React.SyntheticEvent) => {
-      push();
-      e.stopPropagation();
-    },
-    [push]
+  useEffect(() => {
+    const topFrame = frames[frames.length - 1];
+    setRenderedFrame((topFrame && topFrame.element) || undefined);
+    setRenderedFrameHelp((topFrame && topFrame.helpContent) || undefined);
+  }, [frames, api]);
+
+  const content = (
+    <div>
+      {renderedFrame}
+      {!renderedFrame && (
+        <div style={{ display: renderedFrame === undefined ? 'initial' : 'none' }}>
+          {typeof children === 'function' ? children(api) : children}
+        </div>
+      )}
+    </div>
   );
 
-  const showingHelp = helpContent !== undefined && showingInformationSection;
-  const currentWidth = minimized || showingHelp ? '' : width;
+  function getFrameTitle(args: ModalFrame) {
+    return ` > ${args.title}`;
+  }
+  const modalTitleElement = typeof title === 'string' ? title : title(frames.length > 0);
+  const allSubModalTitleElements = frames.map(getFrameTitle);
+  const isBackShortcutDown = useIsDown(MODAL_BACK_SHORTCUT);
+  useSubscribeToShortcut(
+    MODAL_BACK_SHORTCUT,
+    useCallback(() => {
+      api.pop();
+    }, [api])
+  );
+
+  const mainTitle = (
+    <>
+      {frames.length > 0 && (
+        <>
+          <Btn
+            style={{ width: '100px' }}
+            onClick={() => {
+              api.pop();
+            }}
+          >
+            <CenteredText>Back</CenteredText>
+            <KeyboardBtn active={isBackShortcutDown}>{MODAL_BACK_SHORTCUT}</KeyboardBtn>
+          </Btn>
+          <EmSpacer width={1} />
+        </>
+      )}
+      {modalTitleElement}
+    </>
+  );
 
   return (
     <Modal
       style={{
         ...style,
-        left: left + 'px',
-        top: top + 'px',
         zIndex: visible ? zIndex : -1000,
         width: currentWidth,
         maxWidth: currentWidth,
@@ -403,7 +499,11 @@ export function ModalPane({
           setStyleClicking(true);
         }}
       >
-        <Title>{title}</Title>
+        <Title>
+          {mainTitle}
+          {allSubModalTitleElements}
+          <Spacer width={16} />
+        </Title>
 
         {/* render the 'close' and 'help me' buttons, depending on whether or not they're relevant */}
         <ModalButtonsContainer minimized={minimized}>
@@ -433,14 +533,12 @@ export function ModalPane({
         style={{ display: minimized || !showingHelp ? 'none' : undefined }}
         hide={() => setShowingInformationSection(false)}
       >
-        {helpContent && helpContent()}
+        {renderedFrameHelp || (helpContent && helpContent())}
       </InformationSection>
-      <Content
-        style={{ display: minimized || showingHelp ? 'none' : undefined }}
-        noPadding={noPadding}
-      >
-        <DFErrorBoundary>{children}</DFErrorBoundary>
-      </Content>
+
+      <div style={{ display: minimized || showingHelp ? 'none' : undefined }}>
+        <DFErrorBoundary>{content}</DFErrorBoundary>
+      </div>
     </Modal>
   );
 }
