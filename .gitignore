@@ -30,6 +30,3 @@ declarations
 
 # Local Netlify folder
 .netlify
-
-/plugins
-/embedded_plugins
