@@ -500,7 +500,7 @@ class GameManager extends EventEmitter {
       this.playersUpdated$.publish();
     } catch (e) {
       // @todo - what do we do if we can't connect to the webserver? in general this should be a
-      // state of affairs because arenas is a thing.
+      // valid state of affairs because arenas is a thing.
     }
   }
 
@@ -1171,10 +1171,9 @@ class GameManager extends EventEmitter {
       .reduce((totalSoFar: number, nextPlanet: Planet) => totalSoFar + nextPlanet.energy, 0);
   }
 
-  public getPlayerScore(addr: EthAddress): number {
+  public getPlayerScore(addr: EthAddress): number | undefined {
     const player = this.players.get(addr);
-    if (!player) return 0;
-    return player?.score || 0;
+    return player?.score;
   }
 
   private initMiningManager(homeCoords: WorldCoords, cores?: number): void {
@@ -1336,15 +1335,12 @@ class GameManager extends EventEmitter {
   /**
    * Get the score of the currently logged-in account.
    */
-  getMyScore(): number {
+  getMyScore(): number | undefined {
     if (!this.account) {
-      return 0;
+      return undefined;
     }
     const player = this.players.get(this.account);
-    if (!player) {
-      return 0;
-    }
-    return player?.score || 0;
+    return player?.score;
   }
 
   /**
@@ -1655,6 +1651,10 @@ class GameManager extends EventEmitter {
       throw new Error("you can't reveal a planet you haven't discovered");
     }
 
+    if (planet.owner !== this.account) {
+      throw new Error("you can't claim a planet you down't own");
+    }
+
     if (!isLocatable(planet)) {
       throw new Error("you can't reveal a planet whose coordinates you don't know");
     }
@@ -1672,9 +1672,10 @@ class GameManager extends EventEmitter {
     if (!!this.entityStore.getUnconfirmedClaim()) {
       throw new Error("you're already broadcasting coordinates");
     }
+
     const myLastClaimTimestamp = this.players.get(this.account)?.lastClaimTimestamp;
     if (myLastClaimTimestamp && Date.now() < this.getNextClaimAvailableTimestamp()) {
-      throw new Error('still on cooldown for broadcasting');
+      throw new Error('still on cooldown for claiming');
     }
 
     // this is shitty. used for the popup window
@@ -1699,8 +1700,6 @@ class GameManager extends EventEmitter {
           TerminalTextStyle.Sub
         );
         this.terminal.current?.newline();
-
-        // blehh
         return this.contractsAPI.claim(snarkArgs, txIntent);
       })
       .catch((err) => {
@@ -1955,7 +1954,7 @@ class GameManager extends EventEmitter {
       const percentSpawn = (1 / this.contractConstants.PLANET_RARITY) * 100;
       const printProgress = 8;
       this.terminal.current?.print(`Each coordinate has a`);
-      this.terminal.current?.print(` ${percentSpawn}%`, TerminalTextStyle.White);
+      this.terminal.current?.print(` ${percentSpawn}%`, TerminalTextStyle.Text);
       this.terminal.current?.print(` chance of spawning a planet.`);
       this.terminal.current?.println('');
 

@@ -7,33 +7,28 @@ import { EmSpacer, PaddedRecommendedModalWidth } from '../Components/CoreUI';
 import { AccountLabel } from '../Components/Labels/Labels';
 import { MythicLabelText } from '../Components/Labels/MythicLabel';
 import { LoadingSpinner } from '../Components/LoadingSpinner';
-import {
-  usePlanet,
-  usePlayer,
-  usePopAllOnSelectedPlanetChanged,
-  useUIManager,
-} from '../Utils/AppHooks';
+import { usePlanet, usePlayer, useUIManager } from '../Utils/AppHooks';
+import { useEmitterValue } from '../Utils/EmitterHooks';
 import { ModalHandle } from '../Views/ModalPane';
 
 export function ClaimPlanetPane({
-  planetId,
-  modal,
+  initialPlanetId,
+  modal: _modal,
 }: {
   modal: ModalHandle;
-  planetId?: LocationId;
-}) {
-  usePopAllOnSelectedPlanetChanged(modal, planetId);
+  initialPlanetId?: LocationId;
+}): React.ReactElement {
   const uiManager = useUIManager();
   const gameManager = uiManager.getGameManager();
-  const planetWrapper = usePlanet(uiManager, planetId);
-  const planet = planetWrapper.value;
+  const planetId = useEmitterValue(uiManager.selectedPlanetId$, initialPlanetId);
+  const planet = usePlanet(uiManager, planetId).value;
   const player = usePlayer(uiManager);
 
-  if (!planetId || !planet || !isLocatable(planet) || !player.value) return null;
+  if (!planetId || !planet || !isLocatable(planet) || !player.value) return <></>;
 
   const center = { x: 0, y: 0 };
   const distanceFromCenter = Math.floor(gameManager.getDistCoords(planet.location.coords, center));
-  const currentPlayerScore = player.value.score || 0;
+  const currentPlayerScore = player.value.score;
   const isClaimingNow =
     !!planet?.unconfirmedClaim || !!gameManager.getGameObjects().getUnconfirmedClaim();
   const isClaimingThisPlanetNow = !!planet?.unconfirmedClaim;
@@ -43,13 +38,19 @@ export function ClaimPlanetPane({
     (planet.claimer === player.value?.address && !!planet.claimer);
   const claimedByOtherPlayer = !!existingClaim && existingClaim.revealer !== player.value?.address;
   const planetIsLargeEnough = planet.planetLevel >= PLANET_CLAIM_MIN_LEVEL;
-  const disableClaimButton = !planetIsLargeEnough || claimedByThisPlayer || isClaimingNow;
-  const isCloserThanPlayersCurrentClosest = currentPlayerScore > distanceFromCenter;
+  const planetOwnedByMe = player.value?.address && planet.owner === player.value?.address;
+  const disableClaimButton =
+    !planetOwnedByMe || !planetIsLargeEnough || claimedByThisPlayer || isClaimingNow;
+  const isCloserThanPlayersCurrentClosest =
+    currentPlayerScore && currentPlayerScore > distanceFromCenter;
+  // const claimed = planet?.coordsRevealed;
 
   let description = <></>;
   let claimButtonContent = <></>;
 
-  if (planet.planetLevel < PLANET_CLAIM_MIN_LEVEL) {
+  if (!planetOwnedByMe) {
+    description = <></>;
+  } else if (planet.planetLevel < PLANET_CLAIM_MIN_LEVEL) {
     description = (
       <>
         Unfortunately, you cannot claim it planet because it is below level {PLANET_CLAIM_MIN_LEVEL}
@@ -65,7 +66,7 @@ export function ClaimPlanetPane({
     );
   } else if (claimedByThisPlayer) {
     description = <>You've claimed this planet!</>;
-  } else if (currentPlayerScore === 0) {
+  } else if (typeof currentPlayerScore !== 'number') {
     description = (
       <>You haven't claimed a planet yet. Claiming this planet gets you on the board!</>
     );
@@ -81,7 +82,9 @@ export function ClaimPlanetPane({
     );
   }
 
-  if (planet.planetLevel < PLANET_CLAIM_MIN_LEVEL) {
+  if (!planetOwnedByMe) {
+    claimButtonContent = <>You don't own this planet</>;
+  } else if (planet.planetLevel < PLANET_CLAIM_MIN_LEVEL) {
     claimButtonContent = <>Too Small</>;
   } else if (isClaimingNow && !isClaimingThisPlanetNow) {
     claimButtonContent = <>Claiming Other Planet</>;
@@ -89,9 +92,6 @@ export function ClaimPlanetPane({
     claimButtonContent = <LoadingSpinner initialText={'Claiming...'} />;
   } else {
     claimButtonContent = <>Claim Planet</>;
-  }
-
-  if (claimedByOtherPlayer && existingClaim) {
   }
 
   return (

@@ -1,9 +1,9 @@
 import { EthAddress } from '@darkforest_eth/types';
 import React from 'react';
 import styled from 'styled-components';
-import { AlignCenterHorizontally, EmSpacer, Spacer } from '../Components/CoreUI';
+import { AlignCenterHorizontally, EmSpacer } from '../Components/CoreUI';
 import { AccountLabel } from '../Components/Labels/Labels';
-import { Sub, White } from '../Components/Text';
+import { Sub, Text } from '../Components/Text';
 import { TooltipName } from '../Game/WindowManager';
 import { TooltipTrigger } from '../Panes/Tooltip';
 import { usePlayer, useUIManager } from '../Utils/AppHooks';
@@ -16,15 +16,6 @@ const TopBarContainer = styled.div`
   padding: 0 2px;
 `;
 
-function TopBarSection({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <Spacer width={8} />
-      {children}
-    </>
-  );
-}
-
 function BoardPlacement({ account }: { account: EthAddress | undefined }) {
   const uiManager = useUIManager();
   const player = usePlayer(uiManager, account);
@@ -34,10 +25,15 @@ function BoardPlacement({ account }: { account: EthAddress | undefined }) {
   if (!player.value) {
     content = <Sub>n/a</Sub>;
   } else {
+    let formattedScore = 'n/a';
+    if (player.value.score !== undefined && player.value.score !== null) {
+      formattedScore = player.value.score.toLocaleString();
+    }
+
     content = (
       <Sub>
         <TooltipTrigger name={TooltipName.Score}>
-          <White>{player.value.score ?? 'n/a'}</White> pts
+          score: <Text>{formattedScore}</Text>
         </TooltipTrigger>
       </Sub>
     );
@@ -50,14 +46,6 @@ const Points = styled.div`
   display: inline-block;
 `;
 
-function ScoreSection({ account }: { account: EthAddress | undefined }) {
-  return (
-    <TopBarSection>
-      <BoardPlacement account={account} />
-    </TopBarSection>
-  );
-}
-
 export function TopBar({ twitterVerifyHook }: { twitterVerifyHook: ModalHook }) {
   const uiManager = useUIManager();
   const player = usePlayer(uiManager);
@@ -67,19 +55,22 @@ export function TopBar({ twitterVerifyHook }: { twitterVerifyHook: ModalHook }) 
   return (
     <TopBarContainer>
       <AlignCenterHorizontally style={{ width: '100%', justifyContent: 'space-between' }}>
-        <AccountLabel />
         <EmSpacer width={1} />
+        <AccountLabel />
+        <EmSpacer width={0.5} />
         <ModalTwitterVerifyIcon
           small
           hook={twitterVerifyHook}
           style={{
             width: !twitter ? '100px' : '1.5em',
             height: !twitter ? '2em' : '1.5em',
+            border: !twitter ? undefined : 'none',
           }}
           text={!twitter ? 'Connect' : undefined}
         />
         <EmSpacer width={1} />
-        <ScoreSection account={account} />
+        <BoardPlacement account={account} />
+        <EmSpacer width={1} />
       </AlignCenterHorizontally>
     </TopBarContainer>
   );
