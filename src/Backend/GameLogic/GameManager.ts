@@ -1204,7 +1204,7 @@ class GameManager extends EventEmitter {
 
     const isMining = getBooleanSetting(this.account, Setting.IsMining);
     if (isMining) {
-      this.minerManager.startExplore();
+      this.minerManager.stopExplore();
     }
   }
 
@@ -1550,7 +1550,7 @@ class GameManager extends EventEmitter {
   startExplore(): void {
     if (this.minerManager) {
       setBooleanSetting(this.account, Setting.IsMining, true);
-      this.minerManager.startExplore();
+      this.minerManager.stopExplore();
     }
   }
 
