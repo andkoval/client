@@ -10,6 +10,7 @@ import NotificationManager, {
 import dfstyles from '../Styles/dfstyles';
 import { useUIManager } from '../Utils/AppHooks';
 import { Setting } from '../Utils/SettingsHooks';
+import { EthTxStatus } from '@darkforest_eth/types';
 
 const NOTIF_SIZE = '4em';
 const MARGIN = '8px';
@@ -125,7 +126,8 @@ export function NotificationsPane() {
         const newArr = _.clone(arr);
         for (let i = 0; i < arr.length; i++) {
           if (arr[i].id === notif.id) {
-            newArr[i] = notif;
+            if (notif.txStatus === EthTxStatus.Confirm) newArr.splice(i, 1);
+            else newArr[i] = notif;
             return newArr;
           }
         }
