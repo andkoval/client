@@ -10,7 +10,7 @@
     "@darkforest_eth/events": "6.5.0",
     "@darkforest_eth/hashing": "6.5.0",
     "@darkforest_eth/hexgen": "6.5.0",
-    "@darkforest_eth/network": "6.5.0",
+    "@darkforest_eth/network": "git+ssh://git@github.com:orden-gg/df-network.git",
     "@darkforest_eth/serde": "6.5.0",
     "@darkforest_eth/snarks": "6.5.0",
     "@darkforest_eth/types": "6.5.0",
