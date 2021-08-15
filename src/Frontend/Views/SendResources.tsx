@@ -16,7 +16,7 @@ import { SpecialKey, useIsDown, useOnUp } from '../Utils/KeyEmitters';
 import { EXIT_PANE, TOGGLE_SEND } from '../Utils/ShortcutConstants';
 import UIEmitter, { UIEmitterEvent } from '../Utils/UIEmitter';
 
-const DEFAULT_ENERGY_PERCENT = 50;
+const DEFAULT_ENERGY_PERCENT = 70;
 const DEFAULT_SILVER_PERCENT = 0;
 
 const StyledSendResources = styled.div``;
@@ -30,6 +30,32 @@ const enum RowType {
   Silver,
   Artifact,
 }
+
+const energyKeysAndPercents = [
+  ['1', 10],
+  ['2', 20],
+  ['3', 30],
+  ['4', 40],
+  ['5', 50],
+  ['6', 60],
+  ['7', 70],
+  ['8', 80],
+  ['9', 90],
+  ['0', 100],
+] as const;
+
+const silverKeysAndPercents = [
+  ['!', 10],
+  ['@', 20],
+  ['#', 30],
+  ['$', 40],
+  ['%', 50],
+  ['^', 60],
+  ['&', 70],
+  ['*', 80],
+  ['(', 90],
+  [')', 100],
+] as const;
 
 function ResourceRowIcon({ rowType }: { rowType: RowType }) {
   return (
@@ -306,11 +332,17 @@ export function SendResources({
 
   const windowManager = WindowManager.getInstance();
 
-  useEffect(() => {
+  const updateEnergySending = useCallback((energyPercent) => {
     if (!p.value || !uiManager) return;
     uiManager.setForcesSending(p.value.locationId, energyPercent);
+    setEnergyPercent(energyPercent);
+  }, [p, uiManager, setEnergyPercent]);
+
+  const updateSilverSending = useCallback((silverPercent) => {
+    if (!p.value || !uiManager) return;
     uiManager.setSilverSending(p.value.locationId, silverPercent);
-  }, [energyPercent, silverPercent, p, uiManager]);
+    setSilverPercent(silverPercent);
+  }, [p, uiManager, setSilverPercent]);
 
   useEffect(() => {
     const uiEmitter = UIEmitter.getInstance();
@@ -318,11 +350,6 @@ export function SendResources({
     windowManager.setCursorState(CursorState.Normal);
     uiEmitter.emit(UIEmitterEvent.SendCancelled);
   }, [p.value?.locationId, windowManager]);
-
-  useEffect(() => {
-    setEnergyPercent(DEFAULT_ENERGY_PERCENT);
-    setSilverPercent(DEFAULT_SILVER_PERCENT);
-  }, [p.value?.locationId, setEnergyPercent, setSilverPercent]);
 
   const doSend = useCallback(() => {
     if (!uiManager || !windowManager) return;
@@ -338,8 +365,6 @@ export function SendResources({
     }
   }, [p, windowManager, uiManager]);
 
-  const shiftDown = useIsDown(SpecialKey.Shift);
-
   useOnUp(TOGGLE_SEND, doSend);
   useOnUp(EXIT_PANE, () => {
     if (!sending) uiManager.selectedPlanetId$.publish(undefined);
@@ -349,27 +374,24 @@ export function SendResources({
     }
   });
 
-  for (let i = 0; i < 10; i++) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useOnUp(i + '', () => {
-      let percent = i * 10;
+  energyKeysAndPercents.forEach(([key, percent]) => {
+    useOnUp(key, () => {
+      updateEnergySending(percent);
+    }, [updateEnergySending]);
+  });
 
-      if (i === 0) {
-        percent = 100;
-      }
+  silverKeysAndPercents.forEach(([key, percent]) => {
+    useOnUp(key, () => {
+      updateSilverSending(percent);
+    }, [updateSilverSending]);
+  });
 
-      !shiftDown && setEnergyPercent(percent);
-      shiftDown && setSilverPercent(percent);
-    });
-  }
-
-  const setPercent = shiftDown ? setSilverPercent : setEnergyPercent;
   useOnUp('-', () => {
-    setPercent((p) => _.clamp(p - 10, 0, 100));
-  });
+    updateEnergySending(_.clamp(energyPercent - 10, 0, 100));
+  }, [updateEnergySending]);
   useOnUp('+', () => {
-    setPercent((p) => _.clamp(p + 10, 0, 100));
-  });
+    updateEnergySending(_.clamp(energyPercent + 10, 0, 100));
+  }, [updateEnergySending]);
 
   useOnSendCompleted(() => {
     setSending(false);
@@ -407,12 +429,12 @@ export function SendResources({
 
   return (
     <StyledSendResources>
-      <ResourceBar selected={p.value} value={energyPercent} setValue={setEnergyPercent} />
+      <ResourceBar selected={p.value} value={energyPercent} setValue={updateEnergySending} />
       {p.value && p.value.silver > 0 && (
         <ResourceBar
           selected={p.value}
           value={silverPercent}
-          setValue={setSilverPercent}
+          setValue={updateSilverSending}
           isSilver
         />
       )}

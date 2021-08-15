@@ -1,4 +1,4 @@
-import { Artifact, Planet } from '@darkforest_eth/types';
+import { Artifact, ArtifactType, Planet } from '@darkforest_eth/types';
 import React from 'react';
 import styled from 'styled-components';
 import {
@@ -82,6 +82,14 @@ const StyledPlanetActiveArtifact = styled.div<{ planet: Planet | undefined }>`
   color: ${dfstyles.colors.text};
 `;
 
+const FOUR_HOURS_SECONDS = 60 * 60 * 4;
+
+function Countdown({ artifact}: { artifact: Artifact }) {
+  const readyAtSeconds = artifact.lastActivated + FOUR_HOURS_SECONDS;
+  const readyAt = new Date(readyAtSeconds * 1000);
+  return <div>Photoid ready at {readyAt.toLocaleTimeString()}</div>
+}
+
 export function PlanetActiveArtifact({
   artifact,
   planet,
@@ -95,8 +103,9 @@ export function PlanetActiveArtifact({
         Active Artifact:{' '}
         <White>
           {' '}
-          <ArtifactRarityLabelAnim artifact={artifact} /> <ArtifactBiomeText artifact={artifact} />{' '}
+          <ArtifactRarityLabelAnim artifact={artifact} />{' '}
           <ArtifactTypeText artifact={artifact} />
+          {artifact.artifactType === ArtifactType.PhotoidCannon ? <Countdown artifact={artifact} /> : null}
         </White>
       </Sub>
     </StyledPlanetActiveArtifact>
