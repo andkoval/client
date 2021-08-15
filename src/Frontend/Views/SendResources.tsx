@@ -31,32 +31,6 @@ const enum RowType {
   Artifact,
 }
 
-const energyKeysAndPercents = [
-  ['1', 10],
-  ['2', 20],
-  ['3', 30],
-  ['4', 40],
-  ['5', 50],
-  ['6', 60],
-  ['7', 70],
-  ['8', 80],
-  ['9', 90],
-  ['0', 100],
-] as const;
-
-const silverKeysAndPercents = [
-  ['!', 10],
-  ['@', 20],
-  ['#', 30],
-  ['$', 40],
-  ['%', 50],
-  ['^', 60],
-  ['&', 70],
-  ['*', 80],
-  ['(', 90],
-  [')', 100],
-] as const;
-
 function ResourceRowIcon({ rowType }: { rowType: RowType }) {
   return (
     <StyledRowIcon>
@@ -332,17 +306,11 @@ export function SendResources({
 
   const windowManager = WindowManager.getInstance();
 
-  const updateEnergySending = useCallback((energyPercent) => {
+  useEffect(() => {
     if (!p.value || !uiManager) return;
     uiManager.setForcesSending(p.value.locationId, energyPercent);
-    setEnergyPercent(energyPercent);
-  }, [p, uiManager, setEnergyPercent]);
-
-  const updateSilverSending = useCallback((silverPercent) => {
-    if (!p.value || !uiManager) return;
     uiManager.setSilverSending(p.value.locationId, silverPercent);
-    setSilverPercent(silverPercent);
-  }, [p, uiManager, setSilverPercent]);
+  }, [energyPercent, silverPercent, p, uiManager]);
 
   useEffect(() => {
     const uiEmitter = UIEmitter.getInstance();
@@ -350,6 +318,11 @@ export function SendResources({
     windowManager.setCursorState(CursorState.Normal);
     uiEmitter.emit(UIEmitterEvent.SendCancelled);
   }, [p.value?.locationId, windowManager]);
+
+  useEffect(() => {
+    setEnergyPercent(DEFAULT_ENERGY_PERCENT);
+    setSilverPercent(DEFAULT_SILVER_PERCENT);
+  }, [p.value?.locationId, setEnergyPercent, setSilverPercent]);
 
   const doSend = useCallback(() => {
     if (!uiManager || !windowManager) return;
@@ -365,6 +338,8 @@ export function SendResources({
     }
   }, [p, windowManager, uiManager]);
 
+  const shiftDown = useIsDown(SpecialKey.Shift);
+
   useOnUp(TOGGLE_SEND, doSend);
   useOnUp(EXIT_PANE, () => {
     if (!sending) uiManager.selectedPlanetId$.publish(undefined);
@@ -374,24 +349,27 @@ export function SendResources({
     }
   });
 
-  energyKeysAndPercents.forEach(([key, percent]) => {
-    useOnUp(key, () => {
-      updateEnergySending(percent);
-    }, [updateEnergySending]);
-  });
+  for (let i = 0; i < 10; i++) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useOnUp(i + '', () => {
+      let percent = i * 10;
 
-  silverKeysAndPercents.forEach(([key, percent]) => {
-    useOnUp(key, () => {
-      updateSilverSending(percent);
-    }, [updateSilverSending]);
-  });
+      if (i === 0) {
+        percent = 100;
+      }
 
+      !shiftDown && setEnergyPercent(percent);
+      shiftDown && setSilverPercent(percent);
+    });
+  }
+
+  const setPercent = shiftDown ? setSilverPercent : setEnergyPercent;
   useOnUp('-', () => {
-    updateEnergySending(_.clamp(energyPercent - 10, 0, 100));
-  }, [updateEnergySending]);
+    setPercent((p) => _.clamp(p - 10, 0, 100));
+  });
   useOnUp('+', () => {
-    updateEnergySending(_.clamp(energyPercent + 10, 0, 100));
-  }, [updateEnergySending]);
+    setPercent((p) => _.clamp(p + 10, 0, 100));
+  });
 
   useOnSendCompleted(() => {
     setSending(false);
@@ -429,12 +407,12 @@ export function SendResources({
 
   return (
     <StyledSendResources>
-      <ResourceBar selected={p.value} value={energyPercent} setValue={updateEnergySending} />
+      <ResourceBar selected={p.value} value={energyPercent} setValue={setEnergyPercent} />
       {p.value && p.value.silver > 0 && (
         <ResourceBar
           selected={p.value}
           value={silverPercent}
-          setValue={updateSilverSending}
+          setValue={setSilverPercent}
           isSilver
         />
       )}
