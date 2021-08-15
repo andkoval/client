@@ -903,7 +903,7 @@ class GameUIManager extends EventEmitter {
    * Percent from 0 to 100.
    */
   public getSilverSending(planetId: LocationId): number {
-    return this.silverSending[planetId] || 0;
+    return this.silverSending[planetId] ?? 0;
   }
 
   public getArtifactSending(planetId: LocationId): Artifact | undefined {
