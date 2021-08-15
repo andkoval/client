@@ -16,7 +16,6 @@ import { HelpPane } from '../Panes/HelpPane';
 import { HoverPlanetPane } from '../Panes/HoverPlanetPane';
 import OnboardingPane from '../Panes/OnboardingPane';
 import { PlanetContextPane } from '../Panes/PlanetContextPane';
-import { PlanetDexPane } from '../Panes/PlanetDexPane';
 import { PlayerArtifactsPane } from '../Panes/PlayerArtifactsPane';
 import { PluginLibraryPane } from '../Panes/PluginLibraryPane';
 import { PrivatePane } from '../Panes/PrivatePane';
@@ -36,7 +35,6 @@ import {
   TOGGLE_SETTINGS_PANE,
   TOGGLE_TARGETTING,
   TOGGLE_YOUR_ARTIFACTS_PANE,
-  TOGGLE_YOUR_PLANETS_DEX_PANE,
 } from '../Utils/ShortcutConstants';
 import { NotificationsPane } from './Notifications';
 import { SidebarPane } from './SidebarPane';
@@ -50,7 +48,6 @@ export function GameWindowLayout({
   setTerminalVisible: (visible: boolean) => void;
 }) {
   const helpHook = useState<boolean>(false);
-  const planetdexHook = useState<boolean>(false);
   const yourArtifactsHook = useState<boolean>(false);
   const twitterVerifyHook = useState<boolean>(false);
   const settingsHook = useState<boolean>(false);
@@ -109,14 +106,6 @@ export function GameWindowLayout({
     }, [setPluginsHookOpen])
   );
 
-  const setPlanetDexOpen = planetdexHook[1];
-  useOnUp(
-    TOGGLE_YOUR_PLANETS_DEX_PANE,
-    useCallback(() => {
-      setPlanetDexOpen((value) => !value);
-    }, [setPlanetDexOpen])
-  );
-
   const setYourArtifactsOpen = yourArtifactsHook[1];
   useOnUp(
     TOGGLE_YOUR_ARTIFACTS_PANE,
@@ -149,7 +138,6 @@ export function GameWindowLayout({
       {/* all modals rendered into here */}
       <div ref={modalsContainerRef}>
         <HelpPane hook={helpHook} />
-        <PlanetDexPane hook={planetdexHook} />
         <TwitterVerifyPane hook={twitterVerifyHook} />
         <SettingsPane
           ethConnection={uiManager.getEthConnection()}
@@ -181,7 +169,6 @@ export function GameWindowLayout({
             helpHook={helpHook}
             pluginsHook={pluginsHook}
             yourArtifactsHook={yourArtifactsHook}
-            planetdexHook={planetdexHook}
           />
           <CanvasWrapper>
             <ControllableCanvas />
