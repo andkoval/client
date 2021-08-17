@@ -98,9 +98,12 @@ export function ManagePlanetArtifactsPane({
   let content;
 
   if (planet && myArtifacts.value && isLocatable(planet) && account) {
+    // Do not display artifact that's in your inventory
+    let artifactsInInventoryFix = Array.from(myArtifacts.value.values()).filter((art)=>art.onPlanetId == undefined && art.onVoyageId == undefined);
+
     content = (
       <ManageArtifactsPane
-        artifactsInInventory={Array.from(myArtifacts.value.values())}
+        artifactsInInventory={artifactsInInventoryFix}
         artifactsOnPlanet={onPlanet}
         planet={planet}
         currentBlockNumber={currentBlockNumber}
