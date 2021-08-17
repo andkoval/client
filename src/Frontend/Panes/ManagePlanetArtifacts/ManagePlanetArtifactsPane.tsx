@@ -98,7 +98,7 @@ export function ManagePlanetArtifactsPane({
   let content;
 
   if (planet && myArtifacts.value && isLocatable(planet) && account) {
-    // Do not display artifact that's in your inventory
+    // Display only withdrawable artifacts, not all
     let artifactsInInventoryFix = Array.from(myArtifacts.value.values()).filter((art)=>art.onPlanetId == undefined && art.onVoyageId == undefined);
 
     content = (
