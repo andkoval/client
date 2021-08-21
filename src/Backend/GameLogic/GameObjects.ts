@@ -1197,19 +1197,6 @@ export class GameObjects {
     ) {
       notifManager.planetCanUpgrade(current);
     }
-    if (
-      previous.owner !== this.address &&
-      previous.owner !== ethers.constants.AddressZero &&
-      current.owner === this.address
-    ) {
-      notifManager.planetConquered(current as LocatablePlanet);
-    }
-    if (previous.owner === this.address && current.owner !== this.address) {
-      notifManager.planetLost(current as LocatablePlanet);
-    }
-    if (arrival.player !== this.address && current.owner === this.address) {
-      notifManager.planetAttacked(current as LocatablePlanet);
-    }
   }
 
   private processArrivalsForPlanet(
