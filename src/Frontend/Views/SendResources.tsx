@@ -18,7 +18,7 @@ import { useOnUp } from '../Utils/KeyEmitters';
 import { EXIT_PANE, TOGGLE_SEND } from '../Utils/ShortcutConstants';
 import UIEmitter, { UIEmitterEvent } from '../Utils/UIEmitter';
 
-const DEFAULT_ENERGY_PERCENT = 50;
+const DEFAULT_ENERGY_PERCENT = 80;
 const DEFAULT_SILVER_PERCENT = 0;
 
 const StyledSendResources = styled.div``;
