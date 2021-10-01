@@ -1,4 +1,4 @@
-import { ContractMethodName } from '@darkforest_eth/types';
+import { ContractMethodName, EthTxStatus } from '@darkforest_eth/types';
 import _ from 'lodash';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
@@ -69,7 +69,8 @@ export function NotificationsPane() {
         const newArr = _.clone(arr);
         for (let i = 0; i < arr.length; i++) {
           if (arr[i].id === notif.id) {
-            newArr[i] = notif;
+            if (notif.txStatus === EthTxStatus.Confirm) newArr.splice(i, 1);
+            else newArr[i] = notif;
             return newArr;
           }
         }
