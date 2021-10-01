@@ -31,6 +31,7 @@
 - [ModalPlanetDexTooltipPane](Frontend_Panes_TooltipPanes.md#modalplanetdextooltippane)
 - [ModalTwitterVerificationTooltipPane](Frontend_Panes_TooltipPanes.md#modaltwitterverificationtooltippane)
 - [ModalUpgradeDetailsTooltipPane](Frontend_Panes_TooltipPanes.md#modalupgradedetailstooltippane)
+- [NetworkHealthPane](Frontend_Panes_TooltipPanes.md#networkhealthpane)
 - [PiratesTooltipPane](Frontend_Panes_TooltipPanes.md#piratestooltippane)
 - [PlanetRankTooltipPane](Frontend_Panes_TooltipPanes.md#planetranktooltippane)
 - [RangeMultiplierPane](Frontend_Panes_TooltipPanes.md#rangemultiplierpane)
@@ -50,6 +51,7 @@
 - [TwitterHandleTooltipPane](Frontend_Panes_TooltipPanes.md#twitterhandletooltippane)
 - [UpgradesTooltipPane](Frontend_Panes_TooltipPanes.md#upgradestooltippane)
 - [WithdrawArtifactPane](Frontend_Panes_TooltipPanes.md#withdrawartifactpane)
+- [WithdrawSilverButton](Frontend_Panes_TooltipPanes.md#withdrawsilverbutton)
 
 ## Functions
 
@@ -323,6 +325,16 @@
 
 ---
 
+### NetworkHealthPane
+
+▸ **NetworkHealthPane**(): `Element`
+
+#### Returns
+
+`Element`
+
+---
+
 ### PiratesTooltipPane
 
 ▸ **PiratesTooltipPane**(): `Element`
@@ -513,6 +525,16 @@
 ### WithdrawArtifactPane
 
 ▸ **WithdrawArtifactPane**(): `Element`
+
+#### Returns
+
+`Element`
+
+---
+
+### WithdrawSilverButton
+
+▸ **WithdrawSilverButton**(): `Element`
 
 #### Returns
 

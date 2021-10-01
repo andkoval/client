@@ -21,6 +21,7 @@
 - [Defense](Frontend_Game_WindowManager.TooltipName.md#defense)
 - [DefenseMultiplier](Frontend_Game_WindowManager.TooltipName.md#defensemultiplier)
 - [DepositArtifact](Frontend_Game_WindowManager.TooltipName.md#depositartifact)
+- [Empty](Frontend_Game_WindowManager.TooltipName.md#empty)
 - [Energy](Frontend_Game_WindowManager.TooltipName.md#energy)
 - [EnergyCapMultiplier](Frontend_Game_WindowManager.TooltipName.md#energycapmultiplier)
 - [EnergyGrowth](Frontend_Game_WindowManager.TooltipName.md#energygrowth)
@@ -45,6 +46,7 @@
 - [ModalUpgradeDetails](Frontend_Game_WindowManager.TooltipName.md#modalupgradedetails)
 - [ModalWithdrawSilver](Frontend_Game_WindowManager.TooltipName.md#modalwithdrawsilver)
 - [ModalYourArtifacts](Frontend_Game_WindowManager.TooltipName.md#modalyourartifacts)
+- [NetworkHealth](Frontend_Game_WindowManager.TooltipName.md#networkhealth)
 - [Pirates](Frontend_Game_WindowManager.TooltipName.md#pirates)
 - [PlanetRank](Frontend_Game_WindowManager.TooltipName.md#planetrank)
 - [Range](Frontend_Game_WindowManager.TooltipName.md#range)
@@ -64,6 +66,7 @@
 - [TwitterHandle](Frontend_Game_WindowManager.TooltipName.md#twitterhandle)
 - [Upgrades](Frontend_Game_WindowManager.TooltipName.md#upgrades)
 - [WithdrawArtifact](Frontend_Game_WindowManager.TooltipName.md#withdrawartifact)
+- [WithdrawSilverButton](Frontend_Game_WindowManager.TooltipName.md#withdrawsilverbutton)
 
 ## Enumeration members
 
@@ -154,6 +157,15 @@
 ### DepositArtifact
 
 • **DepositArtifact** = `24`
+
+---
+
+### Empty
+
+• **Empty** = `60`
+
+So that you can render a tooltip without anything, and control its contents entirely via the
+{@link TooltipTriggerProps#extraContent} prop field.
 
 ---
 
@@ -301,6 +313,12 @@
 
 ---
 
+### NetworkHealth
+
+• **NetworkHealth** = `58`
+
+---
+
 ### Pirates
 
 • **Pirates** = `8`
@@ -412,3 +430,9 @@
 ### WithdrawArtifact
 
 • **WithdrawArtifact** = `26`
+
+---
+
+### WithdrawSilverButton
+
+• **WithdrawSilverButton** = `59`

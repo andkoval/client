@@ -4,7 +4,13 @@ import styled from 'styled-components';
 import { ProcgenUtils } from '../../Backend/Procedural/ProcgenUtils';
 import { Wrapper } from '../../Backend/Utils/Wrapper';
 import { isLocatable, StatIdx } from '../../_types/global/GlobalTypes';
-import { AlignCenterHorizontally, EmSpacer, FullWidth, InlineBlock } from '../Components/CoreUI';
+import {
+  AlignCenterHorizontally,
+  EmSpacer,
+  FullWidth,
+  InlineBlock,
+  SpreadApart,
+} from '../Components/CoreUI';
 import {
   DefenseIcon,
   EnergyGrowthIcon,
@@ -32,6 +38,7 @@ import { ReadMore } from '../Components/ReadMore';
 import { Sub } from '../Components/Text';
 import { TextPreview } from '../Components/TextPreview';
 import { TooltipName } from '../Game/WindowManager';
+import { TooltipTrigger } from '../Panes/Tooltip';
 import { PlanetIcons } from '../Renderers/PlanetscapeRenderer/PlanetIcons';
 import dfstyles, { snips } from '../Styles/dfstyles';
 import { useActiveArtifact, useUIManager } from '../Utils/AppHooks';
@@ -40,7 +47,6 @@ import {
   DestroyedMarker,
   PlanetActiveArtifact,
   RowTip,
-  SpreadApart,
   TimesTwo,
   TitleBar,
 } from './PlanetCardComponents';
@@ -312,32 +318,33 @@ export function PlanetCard({
 
         {!standalone && (
           <ReadMore height={'0'}>
-            <SpreadApart>
-              <Sub>id</Sub>
-              <TextPreview
-                style={{ color: dfstyles.colors.subtext }}
-                text={planet?.locationId}
-                focusedWidth={'150px'}
-                unFocusedWidth={'150px'}
-              />
-            </SpreadApart>
-
-            <SpreadApart>
-              <Sub>coords</Sub>
-              <TextPreview
-                style={{ color: dfstyles.colors.subtext }}
-                text={`(${planet.location.coords.x}, ${planet.location.coords.y})`}
-                focusedWidth={'150px'}
-                unFocusedWidth={'150px'}
-              />
-            </SpreadApart>
-
-            <SpreadApart>
-              <Sub>owner</Sub>
-              <Sub>
-                <AccountLabel ethAddress={planet.owner} includeAddressIfHasTwitter={true} />
-              </Sub>
-            </SpreadApart>
+            <div style={{ textAlign: 'right' }}>
+              <TooltipTrigger name={TooltipName.Empty} extraContent={<>id</>}>
+                <TextPreview
+                  style={{ color: dfstyles.colors.subtext }}
+                  text={planet?.locationId}
+                  focusedWidth={'150px'}
+                  unFocusedWidth={'150px'}
+                />
+              </TooltipTrigger>
+              <br />
+              <TooltipTrigger name={TooltipName.Empty} extraContent={<>coords</>}>
+                <TextPreview
+                  style={{ color: dfstyles.colors.subtext }}
+                  text={`(${planet.location.coords.x}, ${planet.location.coords.y})`}
+                  focusedWidth={'150px'}
+                  unFocusedWidth={'150px'}
+                />
+              </TooltipTrigger>
+              <br />
+              <TooltipTrigger name={TooltipName.Empty} extraContent={<>owner</>}>
+                <AccountLabel
+                  style={{ color: dfstyles.colors.subtext }}
+                  ethAddress={planet.owner}
+                  includeAddressIfHasTwitter
+                />
+              </TooltipTrigger>
+            </div>
           </ReadMore>
         )}
 

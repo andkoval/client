@@ -1,11 +1,31 @@
 import { PlanetType } from '@darkforest_eth/types';
 import React from 'react';
 import { getPlanetRank, isFullRank } from '../../Backend/Utils/Utils';
-import { ScoreLabel } from '../Components/Labels/KeywordLabels';
-import { Green, Red, White } from '../Components/Text';
+import { ScoreLabel, SilverLabel } from '../Components/Labels/KeywordLabels';
+import { Green, Red, Text, White } from '../Components/Text';
 import { TooltipName } from '../Game/WindowManager';
 import { useAccount, useSelectedPlanet, useUIManager } from '../Utils/AppHooks';
 
+export function NetworkHealthPane() {
+  return (
+    <>
+      <White>xDAI Tx Speed: </White>For each auto gas setting (which you can choose in the{' '}
+      <White>Settings</White> Pane), the average amount of time it takes a transaction with that
+      setting to confirm. The Dark Forest client uploads diagnostic info (you can turn this off via
+      settings), which is aggregated into this network health indicator. I hope you find it helpful
+      in cases the network is being slow.
+    </>
+  );
+}
+
+export function WithdrawSilverButton() {
+  return (
+    <>
+      This is a <Text>Spacetime Rip</Text> where you can withdraw <SilverLabel /> for <ScoreLabel />
+      !
+    </>
+  );
+}
 export function DefenseMultiplierPane() {
   return <>Defense multiplier</>;
 }
@@ -465,5 +485,8 @@ export function TooltipContent({ name }: { name: TooltipName | undefined }) {
   if (name === TooltipName.EnergyGrowthMultiplier) return <EnergyGrowthMultiplierPane />;
   if (name === TooltipName.RangeMultiplier) return <RangeMultiplierPane />;
   if (name === TooltipName.SpeedMultiplier) return <SpeedMultiplierPane />;
+  if (name === TooltipName.NetworkHealth) return <NetworkHealthPane />;
+  if (name === TooltipName.WithdrawSilverButton) return <WithdrawSilverButton />;
+
   return <></>;
 }
