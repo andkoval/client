@@ -2124,8 +2124,7 @@ class GameManager extends EventEmitter {
     await this.contractsAPI
       .prospectPlanet(planetId, actionId)
       .then(() => {
-        const notifManager = NotificationManager.getInstance();
-        notifManager.artifactProspected(planet as LocatablePlanet);
+        console.log('artifact prospected')
       })
       .catch((err) => {
         this.onTxIntentFail(txIntent, err);
@@ -2202,9 +2201,6 @@ class GameManager extends EventEmitter {
             .find((a: Artifact) => a?.planetDiscoveredOn === planet.locationId) as Artifact;
         }).then((foundArtifact) => {
           if (!foundArtifact) throw new Error('Artifact not found?');
-          const notifManager = NotificationManager.getInstance();
-
-          notifManager.artifactFound(planet as LocatablePlanet, foundArtifact);
         });
       })
       .catch((err) => {

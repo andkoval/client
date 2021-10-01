@@ -1194,7 +1194,7 @@ export class GameObjects {
       GameObjects.planetCanUpgrade(current) &&
       current.owner === this.address
     ) {
-      notifManager.planetCanUpgrade(current);
+      console.log(`planet can upgrade - ${current}`)
     }
   }
 

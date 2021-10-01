@@ -670,7 +670,6 @@ class GameUIManager extends EventEmitter {
     if (item !== 'true') {
       const notifManager = NotificationManager.getInstance();
       localStorage.setItem(key, 'true');
-      notifManager.foundBiome(planet);
     }
   }
 
@@ -839,34 +838,6 @@ class GameUIManager extends EventEmitter {
         ) {
           notifManager.foundFoundry(planet);
           setBooleanSetting(account, Setting.FoundArtifact, true);
-        }
-      }
-    }
-
-    if (account !== undefined) {
-      if (this.spaceTypeFromPerlin(chunk.perlin) === SpaceType.DEEP_SPACE) {
-        if (
-          !this.getBooleanSetting(Setting.FoundDeepSpace) &&
-          this.getBooleanSetting(Setting.TutorialCompleted)
-        ) {
-          notifManager.foundDeepSpace(chunk);
-          setBooleanSetting(account, Setting.FoundDeepSpace, true);
-        }
-      } else if (this.spaceTypeFromPerlin(chunk.perlin) === SpaceType.SPACE) {
-        if (
-          !this.getBooleanSetting(Setting.FoundSpace) &&
-          this.getBooleanSetting(Setting.TutorialCompleted)
-        ) {
-          notifManager.foundSpace(chunk);
-          setBooleanSetting(account, Setting.FoundSpace, true);
-        }
-      } else if (this.spaceTypeFromPerlin(chunk.perlin) === SpaceType.DEAD_SPACE) {
-        if (
-          !this.getBooleanSetting(Setting.FoundDeepSpace) &&
-          this.getBooleanSetting(Setting.TutorialCompleted)
-        ) {
-          notifManager.foundDeadSpace(chunk);
-          setBooleanSetting(account, Setting.FoundDeepSpace, true);
         }
       }
     }
