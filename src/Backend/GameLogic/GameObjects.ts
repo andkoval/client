@@ -1189,12 +1189,8 @@ export class GameObjects {
    */
   private emitArrivalNotifications({ previous, current, arrival }: PlanetDiff) {
     const notifManager = NotificationManager.getInstance();
-    if (
-      !GameObjects.planetCanUpgrade(previous) &&
-      GameObjects.planetCanUpgrade(current) &&
-      current.owner === this.address
-    ) {
-      console.log(`planet can upgrade - ${current}`)
+    if (previous.owner === this.address && current.owner !== this.address) {
+      notifManager.planetLost(current as LocatablePlanet);
     }
   }
 
